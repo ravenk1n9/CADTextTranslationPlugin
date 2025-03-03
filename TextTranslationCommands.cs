@@ -14,8 +14,7 @@ namespace TextTranslationPlugin
 {
     public class TextTranslationCommands
     {
-        private const string SOURCE_LAYER = "0文字标注";
-        private const string TARGET_LAYER = "0TXT";
+        private const string TARGET_LAYER = "0TXT"; // 目标图层名称保持不变
 
         // Register the command to be called from AutoCAD
         [CommandMethod("TRANSLATETEXT")]
@@ -43,10 +42,44 @@ namespace TextTranslationPlugin
                 return;
             }
 
-            // 显示选择提示，更明确的指示
-            ed.WriteMessage($"\n选择位于 '{SOURCE_LAYER}' 图层上的文字对象进行翻译... (按 Enter 键完成选择)");
+            string sourceLayer = string.Empty; // 用于存储源图层名称
 
-            // 获取用户选择
+            // 提示用户选择一个文字对象以确定源图层
+            PromptEntityOptions entityOptions = new PromptEntityOptions("\n选择位于源图层的文字对象以确定源图层:");
+            // 移除花括号初始值设定，直接赋值属性
+            entityOptions.AllowNone = false; // 不允许选择空
+            // 移除不支持的属性 (如果你的 AutoCAD 版本不支持)
+            // entityOptions.MessageWhenNoEntsInSelectionSet = "选择集中没有实体.";
+            // entityOptions.MessageForEntitiesOfType = "请选择文字对象:";
+
+            entityOptions.SetRejectMessage("\n只能选择文字对象。");
+            entityOptions.AddAllowedClass(typeof(DBText), true); // 只允许选择 DBText
+
+            PromptEntityResult entityResult = ed.GetEntity(entityOptions);
+
+            if (entityResult.Status == PromptStatus.OK)
+            {
+                using (Transaction trans = db.TransactionManager.StartTransaction())
+                {
+                    DBObject obj = trans.GetObject(entityResult.ObjectId, OpenMode.ForRead);
+                    if (obj is DBText selectedText)
+                    {
+                        sourceLayer = selectedText.Layer; // 获取所选文字对象的图层
+                        ed.WriteMessage($"\n源图层已设置为: '{sourceLayer}'。");
+                    }
+                    trans.Commit();
+                }
+            }
+            else
+            {
+                ed.WriteMessage("\n未选择文字对象或选择被取消，命令终止。");
+                return; // 如果未选择或取消选择，则退出命令
+            }
+
+            // 提示用户选择位于源图层上的文字对象进行翻译
+            ed.WriteMessage($"\n选择位于 '{sourceLayer}' 图层上的文字对象进行翻译... (按 Enter 键完成选择)");
+
+            // 获取用户选择，允许多选
             PromptSelectionResult selRes = ed.GetSelection();
             if (selRes.Status != PromptStatus.OK)
             {
@@ -61,11 +94,34 @@ namespace TextTranslationPlugin
                 return;
             }
 
+            // 筛选选择集，只保留位于源图层的文字对象
+            ObjectId[] filteredObjectIds = ss.GetObjectIds().Where(objectId =>
+            {
+                using (Transaction trans = db.TransactionManager.StartTransaction())
+                {
+                    DBObject obj = trans.GetObject(objectId, OpenMode.ForRead);
+                    if (obj is DBText text && text.Layer == sourceLayer)
+                    {
+                        return true;
+                    }
+                    return false;
+                }
+            }).ToArray();
+
+            if (filteredObjectIds.Length == 0)
+            {
+                ed.WriteMessage($"\n在选择集中没有找到位于图层 '{sourceLayer}' 上的文字对象。");
+                return;
+            }
+
+            // 创建新的选择集，用于后续处理
+            SelectionSet filteredSS = SelectionSet.FromObjectIds(filteredObjectIds);
+
             System.Threading.Thread translationThread = new System.Threading.Thread(() =>
             {
                 try
                 {
-                    ProcessTextObjectsAsync(doc, openAIService, ss).Wait();
+                    ProcessTextObjectsAsync(doc, openAIService, filteredSS, sourceLayer).Wait(); // 传递筛选后的选择集和源图层
                 }
                 catch (System.Exception ex)
                 {
@@ -80,7 +136,7 @@ namespace TextTranslationPlugin
             translationThread.Start();
         }
 
-        private async Task ProcessTextObjectsAsync(Document doc, OpenAIService openAIService, SelectionSet ss)
+        private async Task ProcessTextObjectsAsync(Document doc, OpenAIService openAIService, SelectionSet ss, string sourceLayer)
         {
             Editor ed = doc.Editor;
             Database db = doc.Database;
@@ -113,7 +169,7 @@ namespace TextTranslationPlugin
                     foreach (SelectedObject selObj in ss)
                     {
                         Entity ent = trans.GetObject(selObj.ObjectId, OpenMode.ForRead) as Entity;
-                        if (ent is DBText text && text.Layer == SOURCE_LAYER)
+                        if (ent is DBText text && text.Layer == sourceLayer) // 再次确保图层匹配，虽然此处可能已在筛选时完成
                         {
                             string content = text.TextString;
                             textContents[selObj.ObjectId] = content;
@@ -125,7 +181,7 @@ namespace TextTranslationPlugin
 
                 if (textsToTranslate.Count == 0)
                 {
-                    ed.WriteMessage("\n在源图层上没有找到文字对象。");
+                    ed.WriteMessage($"\n在图层 '{sourceLayer}' 上没有找到文字对象进行翻译。");
                     return;
                 }
 
