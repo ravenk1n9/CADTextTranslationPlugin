@@ -2,6 +2,7 @@
 using System;
 using System.Collections.Generic;
 using System.IO;
+using System.Windows.Forms;
 
 namespace TextTranslationPlugin
 {
@@ -52,7 +53,8 @@ namespace TextTranslationPlugin
                 {
                     ApiKey = GetConfigValue(configValues, "APIKEY"),
                     BaseUrl = GetConfigValue(configValues, "BASEURL", "https://api.openai.com/v1/chat/completions"), // 默认使用 OpenAI 官方 API 地址
-                    Model = GetConfigValue(configValues, "MODEL", "gpt-4")
+                    Model = GetConfigValue(configValues, "MODEL", "gpt-4"),
+                    SystemPrompt = GetConfigValue(configValues, "SYSTEMPROMPT")
                 };
 
                 // Validate the config

@@ -56,7 +56,7 @@ namespace TextTranslationPlugin
                         model = _config.Model,
                         messages = new[]
                         {
-                            new { role = "system", content = "你是一位建筑幕墙词汇翻译专家。将用户提供的中文翻译成英文，注意使用专业词汇。只输出翻译结果，不需要解释。" },
+                            new { role = "system", content = _config.SystemPrompt },
                             new { role = "user", content = text }
                         },
                         temperature = 0.3
@@ -188,6 +188,7 @@ namespace TextTranslationPlugin
         public string ApiKey { get; set; }
         public string BaseUrl { get; set; }
         public string Model { get; set; }
+        public string SystemPrompt { get; set; }
     }
 
     public class OpenAIResponse
