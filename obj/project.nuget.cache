@@ -1,0 +1,12 @@
+{
+  "version": 2,
+  "dgSpecHash": "qCO5k2gBFmw=",
+  "success": true,
+  "projectFilePath": "C:\\Users\\raven\\Desktop\\Github\\CADTextTranslationPlugin\\TextTranslationPlugin.csproj",
+  "expectedPackageFiles": [
+    "C:\\Users\\raven\\.nuget\\packages\\microsoft.netframework.referenceassemblies\\1.0.3\\microsoft.netframework.referenceassemblies.1.0.3.nupkg.sha512",
+    "C:\\Users\\raven\\.nuget\\packages\\microsoft.netframework.referenceassemblies.net47\\1.0.3\\microsoft.netframework.referenceassemblies.net47.1.0.3.nupkg.sha512",
+    "C:\\Users\\raven\\.nuget\\packages\\newtonsoft.json\\13.0.1\\newtonsoft.json.13.0.1.nupkg.sha512"
+  ],
+  "logs": []
+}

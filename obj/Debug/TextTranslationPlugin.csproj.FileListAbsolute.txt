@@ -1,0 +1,11 @@
+C:\Users\raven\Desktop\Github\CADTextTranslationPlugin\bin\Debug\api.env
+C:\Users\raven\Desktop\Github\CADTextTranslationPlugin\bin\Debug\TextTranslationPlugin.dll
+C:\Users\raven\Desktop\Github\CADTextTranslationPlugin\bin\Debug\TextTranslationPlugin.pdb
+C:\Users\raven\Desktop\Github\CADTextTranslationPlugin\bin\Debug\Newtonsoft.Json.dll
+C:\Users\raven\Desktop\Github\CADTextTranslationPlugin\obj\Debug\TextTranslationPlugin.csproj.AssemblyReference.cache
+C:\Users\raven\Desktop\Github\CADTextTranslationPlugin\obj\Debug\TextTranslationPlugin.GeneratedMSBuildEditorConfig.editorconfig
+C:\Users\raven\Desktop\Github\CADTextTranslationPlugin\obj\Debug\TextTranslationPlugin.csproj.CoreCompileInputs.cache
+C:\Users\raven\Desktop\Github\CADTextTranslationPlugin\obj\Debug\TextTranslationPlugin.sourcelink.json
+C:\Users\raven\Desktop\Github\CADTextTranslationPlugin\obj\Debug\TextTran.2684035B.Up2Date
+C:\Users\raven\Desktop\Github\CADTextTranslationPlugin\obj\Debug\TextTranslationPlugin.dll
+C:\Users\raven\Desktop\Github\CADTextTranslationPlugin\obj\Debug\TextTranslationPlugin.pdb
