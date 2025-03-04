@@ -408,11 +408,11 @@
   "project": {
     "version": "1.0.0",
     "restore": {
-      "projectUniqueName": "C:\\Users\\raven\\Desktop\\Github\\CADTextTranslationPlugin\\TextTranslationPlugin.csproj",
+      "projectUniqueName": "C:\\Users\\raven\\Desktop\\Github\\CADTextTranslationPlugin\\main\\TextTranslationPlugin.csproj",
       "projectName": "TextTranslationPlugin",
-      "projectPath": "C:\\Users\\raven\\Desktop\\Github\\CADTextTranslationPlugin\\TextTranslationPlugin.csproj",
+      "projectPath": "C:\\Users\\raven\\Desktop\\Github\\CADTextTranslationPlugin\\main\\TextTranslationPlugin.csproj",
       "packagesPath": "C:\\Users\\raven\\.nuget\\packages\\",
-      "outputPath": "C:\\Users\\raven\\Desktop\\Github\\CADTextTranslationPlugin\\obj\\",
+      "outputPath": "C:\\Users\\raven\\Desktop\\Github\\CADTextTranslationPlugin\\main\\obj\\",
       "projectStyle": "PackageReference",
       "configFilePaths": [
         "C:\\Users\\raven\\AppData\\Roaming\\NuGet\\NuGet.Config"

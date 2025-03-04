@@ -9,13 +9,98 @@ using Autodesk.AutoCAD.DatabaseServices;
 using Autodesk.AutoCAD.Geometry;
 using Autodesk.AutoCAD.EditorInput;
 using System.Windows.Forms;
+using System.IO;
 
 namespace TextTranslationPlugin
 {
     public class TextTranslationCommands
     {
-        private const string SOURCE_LAYER = "0文字标注";
-        private const string TARGET_LAYER = "0TXT";
+        private static string SOURCE_LAYER; // 从配置文件读取
+        private static string TARGET_LAYER; // 从配置文件读取
+
+        // 静态构造函数，在类加载时读取配置文件
+        static TextTranslationCommands()
+        {
+            LoadEnvVariables(); // 加载环境变量
+        }
+
+        // 加载环境变量的方法
+        private static void LoadEnvVariables()
+        {
+            string envFilePath = Path.Combine(
+                Path.GetDirectoryName(System.Reflection.Assembly.GetExecutingAssembly().Location),
+                "api.env"
+            );
+
+            if (File.Exists(envFilePath))
+            {
+                try
+                {
+                    foreach (string line in File.ReadAllLines(envFilePath))
+                    {
+                        string[] parts = line.Split(new char[] { '=' }, 2, StringSplitOptions.RemoveEmptyEntries); // 修改了Split方法
+                        if (parts.Length == 2)
+                        {
+                            string key = parts[0].Trim();
+                            string value = parts[1].Trim();
+                            if (key == "SOURCE_LAYER")
+                            {
+                                SOURCE_LAYER = value;
+                            }
+                            else if (key == "TARGET_LAYER")
+                            {
+                                TARGET_LAYER = value;
+                            }
+                        }
+                    }
+                }
+                catch (System.Exception ex) // 使用 System.Exception 明确指定命名空间
+                {
+                    // 配置文件读取失败，记录日志或使用默认值，这里简单输出到 AutoCAD 命令行
+                    Document doc = Autodesk.AutoCAD.ApplicationServices.Application.DocumentManager.MdiActiveDocument;
+                    if (doc != null)
+                    {
+                        Editor ed = doc.Editor;
+                        ed.WriteMessage($"\n加载配置文件 api.env 失败: {ex.Message}");
+                    }
+                    SOURCE_LAYER = "0文字标注"; // 默认值
+                    TARGET_LAYER = "0TXT";     // 默认值
+                    return; // 避免后续的空引用异常
+                }
+            }
+            else
+            {
+                // 配置文件不存在，使用默认值并输出提示
+                Document doc = Autodesk.AutoCAD.ApplicationServices.Application.DocumentManager.MdiActiveDocument;
+                if (doc != null)
+                {
+                    Editor ed = doc.Editor;
+                    ed.WriteMessage("\n配置文件 api.env 未找到，使用默认图层名称。");
+                }
+                SOURCE_LAYER = "0文字标注"; // 默认值
+                TARGET_LAYER = "0TXT";     // 默认值
+            }
+
+            // 检查是否成功加载，如果为空则使用默认值并提示
+            if (string.IsNullOrEmpty(SOURCE_LAYER))
+            {
+                SOURCE_LAYER = "0文字标注";
+                Document doc = Autodesk.AutoCAD.ApplicationServices.Application.DocumentManager.MdiActiveDocument;
+                if (doc != null)
+                {
+                    doc.Editor.WriteMessage("\nSOURCE_LAYER 配置项未找到或为空，使用默认值 '0文字标注'。");
+                }
+            }
+            if (string.IsNullOrEmpty(TARGET_LAYER))
+            {
+                TARGET_LAYER = "0TXT";
+                Document doc = Autodesk.AutoCAD.ApplicationServices.Application.DocumentManager.MdiActiveDocument;
+                if (doc != null)
+                {
+                    doc.Editor.WriteMessage("\nTARGET_LAYER 配置项未找到或为空，使用默认值 '0TXT'。");
+                }
+            }
+        }
 
         // Register the command to be called from AutoCAD
         [CommandMethod("TRANSLATETEXT")]

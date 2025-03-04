@@ -40,7 +40,7 @@ namespace TextTranslationPlugin
                 // 使用命令行输出而不是弹窗，减少干扰
                 if (doc != null) // 使用外部作用域的 doc 变量
                 {
-                    doc.Editor.WriteMessage("\nText Translation Plugin v0.0.3.1 loaded successfully.");
+                    doc.Editor.WriteMessage("\nText Translation Plugin loaded successfully.");
                     doc.Editor.WriteMessage("\nUse TRANSLATETEXT command to translate selected text objects.");
                 }
             }

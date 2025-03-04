@@ -1,8 +1,8 @@
 {
   "version": 2,
-  "dgSpecHash": "qCO5k2gBFmw=",
+  "dgSpecHash": "SRPME//MTyk=",
   "success": true,
-  "projectFilePath": "C:\\Users\\raven\\Desktop\\Github\\CADTextTranslationPlugin\\TextTranslationPlugin.csproj",
+  "projectFilePath": "C:\\Users\\raven\\Desktop\\Github\\CADTextTranslationPlugin\\main\\TextTranslationPlugin.csproj",
   "expectedPackageFiles": [
     "C:\\Users\\raven\\.nuget\\packages\\microsoft.netframework.referenceassemblies\\1.0.3\\microsoft.netframework.referenceassemblies.1.0.3.nupkg.sha512",
     "C:\\Users\\raven\\.nuget\\packages\\microsoft.netframework.referenceassemblies.net47\\1.0.3\\microsoft.netframework.referenceassemblies.net47.1.0.3.nupkg.sha512",
