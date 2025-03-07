@@ -241,7 +241,7 @@ namespace TextTranslationPlugin
                             string translatedText;
                             if (!translatedTexts.TryGetValue(originalText, out translatedText))
                             {
-                                translatedText = originalText; // 翻译失败时使用原文
+                                translatedText = originalText; // 翻译失败时使用原文替代
                             }
 
                             Entity ent = trans.GetObject(objectId, OpenMode.ForRead) as Entity;

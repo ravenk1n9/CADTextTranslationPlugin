@@ -65,7 +65,7 @@ namespace TextTranslationPlugin
                     string jsonRequest = JsonConvert.SerializeObject(requestData);
                     var content = new StringContent(jsonRequest, Encoding.UTF8, "application/json");
 
-                    // 使用异步API调用
+                    // 异步API调用
                     HttpResponseMessage response = await _httpClient.PostAsync(_config.BaseUrl, content);
 
                     // Parse the response

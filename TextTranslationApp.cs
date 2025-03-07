@@ -37,7 +37,7 @@ namespace TextTranslationPlugin
                     return; // 初始化失败，直接返回
                 }
 
-                // 使用命令行输出而不是弹窗，减少干扰
+                // 使用命令行输出而不是弹窗
                 if (doc != null) // 使用外部作用域的 doc 变量
                 {
                     doc.Editor.WriteMessage("\n文字翻译插件加载成功  作者:姚京天");
