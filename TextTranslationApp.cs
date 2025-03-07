@@ -40,8 +40,8 @@ namespace TextTranslationPlugin
                 // 使用命令行输出而不是弹窗，减少干扰
                 if (doc != null) // 使用外部作用域的 doc 变量
                 {
-                    doc.Editor.WriteMessage("\nText Translation Plugin loaded successfully.");
-                    doc.Editor.WriteMessage("\nUse TRANSLATETEXT command to translate selected text objects.");
+                    doc.Editor.WriteMessage("\n文字翻译插件加载成功  作者:姚京天");
+                    doc.Editor.WriteMessage("\n文字翻译命令:TRANSLATETEXT");
                 }
             }
             catch (System.Exception ex) // 明确指定使用 System.Exception

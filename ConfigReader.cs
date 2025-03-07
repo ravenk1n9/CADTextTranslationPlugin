@@ -60,7 +60,7 @@ namespace TextTranslationPlugin
                 // Validate the config
                 if (string.IsNullOrEmpty(config.ApiKey))
                 {
-                    System.Windows.Forms.MessageBox.Show("API Key is missing in the configuration file.");
+                    System.Windows.Forms.MessageBox.Show("未正确配置API KEY.");
                     return null;
                 }
 
