@@ -137,7 +137,7 @@ namespace TextTranslationPlugin
             }
 
             // 对未缓存的文本进行分批处理
-            var batches = SplitIntoBatches(textsToTranslate, 5); // 每批5个文本
+            var batches = SplitIntoBatches(textsToTranslate, 20); // 每批10个文本，增加批次大小
             foreach (var batch in batches)
             {
                 var tasks = batch.Select(text => TranslateTextAsync(text)).ToList();

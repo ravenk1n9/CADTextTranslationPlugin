@@ -21,7 +21,7 @@ namespace TextTranslationPlugin
             try
             {
                 // 初始化配置
-                OpenAIConfig config = ConfigReader.ReadConfig();
+                OpenAIConfig config = ConfigReader.ReadOpenAIConfig();
                 if (config != null)
                 {
                     // 创建单例服务

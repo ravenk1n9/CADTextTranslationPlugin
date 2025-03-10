@@ -2,29 +2,35 @@
 using System;
 using System.Collections.Generic;
 using System.IO;
+using System.Windows.Forms;
 
 namespace TextTranslationPlugin
 {
     public static class ConfigReader
     {
-        public static OpenAIConfig ReadConfig()
+        private static Dictionary<string, string> _configValues;
+
+        static ConfigReader()
         {
+            _configValues = LoadConfigValues();
+        }
+
+        private static Dictionary<string, string> LoadConfigValues()
+        {
+            Dictionary<string, string> values = new Dictionary<string, string>();
+            string configPath = Path.Combine(
+                Path.GetDirectoryName(System.Reflection.Assembly.GetExecutingAssembly().Location),
+                "api.env"
+            );
+
+            if (!File.Exists(configPath))
+            {
+                MessageBox.Show($"Configuration file not found at: {configPath}", "配置错误", MessageBoxButtons.OK, MessageBoxIcon.Warning);
+                return values; // 返回空字典，后续代码会使用默认值
+            }
+
             try
             {
-                string configPath = Path.Combine(
-                    Path.GetDirectoryName(System.Reflection.Assembly.GetExecutingAssembly().Location),
-                    "api.env"
-                );
-
-                if (!File.Exists(configPath))
-                {
-                    System.Windows.Forms.MessageBox.Show($"Configuration file not found at: {configPath}");
-                    return null;
-                }
-
-                Dictionary<string, string> configValues = new Dictionary<string, string>();
-
-                // Read the config file
                 string[] lines = File.ReadAllLines(configPath);
                 foreach (string line in lines)
                 {
@@ -42,39 +48,49 @@ namespace TextTranslationPlugin
                         {
                             value = value.Substring(1, value.Length - 2);
                         }
-
-                        configValues[key] = value;
+                        values[key] = value;
                     }
                 }
-
-                // Create and populate the config object
-                OpenAIConfig config = new OpenAIConfig
-                {
-                    ApiKey = GetConfigValue(configValues, "APIKEY"),
-                    BaseUrl = GetConfigValue(configValues, "BASEURL", "https://api.openai.com/v1/chat/completions"), // 默认使用 OpenAI 官方 API 地址
-                    Model = GetConfigValue(configValues, "MODEL", "gpt-4"),
-                    SystemPrompt = GetConfigValue(configValues, "SYSTEMPROMPT")
-                };
-
-                // Validate the config
-                if (string.IsNullOrEmpty(config.ApiKey))
-                {
-                    System.Windows.Forms.MessageBox.Show("未正确配置API KEY.");
-                    return null;
-                }
-
-                return config;
             }
             catch (Exception ex)
             {
-                System.Windows.Forms.MessageBox.Show($"Error reading configuration: {ex.Message}");
-                return null;
+                MessageBox.Show($"Error reading configuration file: {ex.Message}", "配置错误", MessageBoxButtons.OK, MessageBoxIcon.Error);
             }
+            return values;
         }
 
-        private static string GetConfigValue(Dictionary<string, string> configValues, string key, string defaultValue = null)
+        public static OpenAIConfig ReadOpenAIConfig()
         {
-            if (configValues.TryGetValue(key, out string value))
+            OpenAIConfig config = new OpenAIConfig
+            {
+                ApiKey = GetConfigValue("APIKEY"),
+                BaseUrl = GetConfigValue("BASEURL", "https://api.openai.com/v1/chat/completions"), // 默认使用 OpenAI 官方 API 地址
+                Model = GetConfigValue("MODEL", "gpt-4"),
+                SystemPrompt = GetConfigValue("SYSTEMPROMPT")
+            };
+
+            // Validate the config
+            if (string.IsNullOrEmpty(config.ApiKey))
+            {
+                MessageBox.Show("未正确配置API KEY.", "配置错误", MessageBoxButtons.OK, MessageBoxIcon.Error);
+                return null;
+            }
+            return config;
+        }
+
+        public static string GetSourceLayer()
+        {
+            return GetConfigValue("SOURCE_LAYER", "0文字标注"); // 默认值
+        }
+
+        public static string GetTargetLayer()
+        {
+            return GetConfigValue("TARGET_LAYER", "0TXT");     // 默认值
+        }
+
+        private static string GetConfigValue(string key, string defaultValue = null)
+        {
+            if (_configValues.TryGetValue(key, out string value))
             {
                 return value;
             }
