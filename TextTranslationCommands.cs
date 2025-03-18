@@ -26,7 +26,7 @@ namespace TextTranslationPlugin
 
         // Register the command to be called from AutoCAD
         [CommandMethod("TRANSLATETEXT")]
-        public async void TranslateText() // 修改为 async void
+        public async void TranslateText() 
         {
             Document doc = Autodesk.AutoCAD.ApplicationServices.Application.DocumentManager.MdiActiveDocument;
             if (doc == null)
@@ -51,9 +51,9 @@ namespace TextTranslationPlugin
             }
 
             // 显示选择提示，更明确的指示
-            ed.WriteMessage($"\n选择位于 '{SOURCE_LAYER}' 图层上的文字对象进行翻译... (按 Enter 键完成选择)");
+            ed.WriteMessage($"\n选择位于 '{SOURCE_LAYER}' 图层上的文字和多行文字对象进行翻译... (按 Enter 键完成选择)");
 
-            // 获取用户选择
+            // 获取用户选择，允许选择多种类型的对象
             PromptSelectionResult selRes = ed.GetSelection();
             if (selRes.Status != PromptStatus.OK)
             {
@@ -72,7 +72,7 @@ namespace TextTranslationPlugin
             {
                 // 直接 await 异步方法，避免线程阻塞
                 await ProcessTextObjectsAsync(doc, openAIService, ss);
-                ed.WriteMessage("\n文字翻译完成。"); // 翻译完成后提示
+                ed.WriteMessage("\n文字和多行文字翻译完成。"); // 翻译完成后提示
             }
             catch (System.Exception ex)
             {
@@ -90,8 +90,11 @@ namespace TextTranslationPlugin
 
             try
             {
-                List<string> textsToTranslate = new List<string>();
-                Dictionary<ObjectId, string> textContents = new Dictionary<ObjectId, string>();
+                List<string> dbTextsToTranslate = new List<string>(); // 用于存储 DBText 的翻译文本
+                Dictionary<ObjectId, string> dbTextContents = new Dictionary<ObjectId, string>(); // 存储 DBText 的 ObjectId 和内容
+
+                List<string> mTextsToTranslate = new List<string>(); // 用于存储 MText 的翻译文本
+                Dictionary<ObjectId, string> mTextContents = new Dictionary<ObjectId, string>(); // 存储 MText 的 ObjectId 和内容
 
                 using (doc.LockDocument())
                 using (Transaction trans = db.TransactionManager.StartTransaction())
@@ -113,73 +116,138 @@ namespace TextTranslationPlugin
                         targetLayerId = lt[TARGET_LAYER];
                     }
 
+                    // 分离 DBText 和 MText 的处理
                     foreach (SelectedObject selObj in ss)
                     {
                         Entity ent = trans.GetObject(selObj.ObjectId, OpenMode.ForRead) as Entity;
                         if (ent is DBText text && text.Layer == SOURCE_LAYER)
                         {
                             string content = text.TextString;
-                            textContents[selObj.ObjectId] = content;
-                            textsToTranslate.Add(content);
+                            dbTextContents[selObj.ObjectId] = content;
+                            dbTextsToTranslate.Add(content);
+                        }
+                        else if (ent is MText mtext && mtext.Layer == SOURCE_LAYER) // 处理 MText
+                        {
+                            string content = mtext.Contents; // 使用 Contents 属性
+                            mTextContents[selObj.ObjectId] = content;
+                            mTextsToTranslate.Add(content);
                         }
                     }
                     trans.Commit();
                 }
 
-                if (textsToTranslate.Count == 0)
+                // 先处理 DBText
+                if (dbTextsToTranslate.Count > 0)
                 {
-                    ed.WriteMessage("\n在源图层上没有找到文字对象。");
-                    return;
+                    ed.WriteMessage("\n开始翻译单行文字...");
+                    Dictionary<string, string> translatedDBTexts = await openAIService.BatchTranslateAsync(dbTextsToTranslate);
+
+                    using (doc.LockDocument())
+                    using (Transaction trans = db.TransactionManager.StartTransaction())
+                    {
+                        try
+                        {
+                            // 获取目标图层
+                            LayerTable lt = (LayerTable)trans.GetObject(db.LayerTableId, OpenMode.ForRead);
+                            ObjectId targetLayerId = lt[TARGET_LAYER];
+
+                            // 获取当前空间记录
+                            BlockTable bt = (BlockTable)trans.GetObject(db.BlockTableId, OpenMode.ForRead);
+                            BlockTableRecord btr = (BlockTableRecord)trans.GetObject(
+                                db.CurrentSpaceId,
+                                OpenMode.ForWrite
+                            );
+
+                            int processedDBTextCount = 0;
+                            foreach (var pair in dbTextContents)
+                            {
+                                ObjectId objectId = pair.Key;
+                                string originalText = pair.Value;
+                                string translatedText;
+                                if (!translatedDBTexts.TryGetValue(originalText, out translatedText))
+                                {
+                                    translatedText = originalText; // 翻译失败时使用原文替代
+                                }
+
+                                Entity ent = trans.GetObject(objectId, OpenMode.ForRead) as Entity;
+                                if (ent is DBText)
+                                {
+                                    DBText text = ent as DBText;
+                                    processedDBTextCount += ProcessDBText(trans, text, targetLayerId, btr, translatedText);
+                                }
+                            }
+                            ed.WriteMessage($"\n处理并翻译了 {processedDBTextCount} 个单行文字对象。");
+                            trans.Commit(); // 提交 DBText 的事务
+                        }
+                        catch (System.Exception innerEx)
+                        {
+                            ed.WriteMessage($"\n处理单行文字事务时发生错误: {innerEx.Message}");
+                            ed.WriteMessage($"\n内部异常堆栈跟踪: {innerEx.StackTrace}");
+                            trans.Abort();
+                            throw;
+                        }
+                    }
+                }
+                else
+                {
+                    ed.WriteMessage("\n在源图层上没有找到单行文字对象。");
                 }
 
-                Dictionary<string, string> translatedTexts = await openAIService.BatchTranslateAsync(textsToTranslate);
-
-                using (doc.LockDocument())
-                using (Transaction trans = db.TransactionManager.StartTransaction())
+                // 然后处理 MText
+                if (mTextsToTranslate.Count > 0)
                 {
-                    try
+                    ed.WriteMessage("\n开始翻译多行文字...");
+                    Dictionary<string, string> translatedMTexts = await openAIService.BatchTranslateAsync(mTextsToTranslate);
+
+                    using (doc.LockDocument())
+                    using (Transaction trans = db.TransactionManager.StartTransaction())
                     {
-                        // 获取目标图层
-                        LayerTable lt = (LayerTable)trans.GetObject(db.LayerTableId, OpenMode.ForRead);
-                        ObjectId targetLayerId = lt[TARGET_LAYER];
-
-                        // 获取当前空间记录
-                        BlockTable bt = (BlockTable)trans.GetObject(db.BlockTableId, OpenMode.ForRead);
-                        BlockTableRecord btr = (BlockTableRecord)trans.GetObject(
-                            db.CurrentSpaceId,
-                            OpenMode.ForWrite
-                        );
-
-                        int processedCount = 0;
-
-                        foreach (var pair in textContents)
+                        try
                         {
-                            ObjectId objectId = pair.Key;
-                            string originalText = pair.Value;
-                            string translatedText;
-                            if (!translatedTexts.TryGetValue(originalText, out translatedText))
-                            {
-                                translatedText = originalText; // 翻译失败时使用原文替代
-                            }
+                            // 获取目标图层
+                            LayerTable lt = (LayerTable)trans.GetObject(db.LayerTableId, OpenMode.ForRead);
+                            ObjectId targetLayerId = lt[TARGET_LAYER];
 
-                            Entity ent = trans.GetObject(objectId, OpenMode.ForRead) as Entity;
-                            if (ent is DBText)
+                            // 获取当前空间记录
+                            BlockTable bt = (BlockTable)trans.GetObject(db.BlockTableId, OpenMode.ForRead);
+                            BlockTableRecord btr = (BlockTableRecord)trans.GetObject(
+                                db.CurrentSpaceId,
+                                OpenMode.ForWrite
+                            );
+
+                            int processedMTextCount = 0;
+                            foreach (var pair in mTextContents)
                             {
-                                DBText text = ent as DBText;
-                                processedCount += ProcessDBText(trans, text, targetLayerId, btr, translatedText);
+                                ObjectId objectId = pair.Key;
+                                string originalText = pair.Value;
+                                string translatedText;
+                                if (!translatedMTexts.TryGetValue(originalText, out translatedText))
+                                {
+                                    translatedText = originalText; // 翻译失败时使用原文替代
+                                }
+
+                                Entity ent = trans.GetObject(objectId, OpenMode.ForRead) as Entity;
+                                if (ent is MText)
+                                {
+                                    MText mtext = ent as MText;
+                                    processedMTextCount += ProcessMText(trans, mtext, targetLayerId, btr, translatedText); // 调用新的 ProcessMText 方法
+                                }
                             }
+                            ed.WriteMessage($"\n处理并翻译了 {processedMTextCount} 个多行文字对象。");
+                            trans.Commit(); // 提交 MText 的事务
                         }
-
-                        trans.Commit();
-                        ed.WriteMessage($"\n处理并翻译了 {processedCount} 个文字对象。");
+                        catch (System.Exception innerEx)
+                        {
+                            ed.WriteMessage($"\n处理多行文字事务时发生错误: {innerEx.Message}");
+                            ed.WriteMessage($"\n内部异常堆栈跟踪: {innerEx.StackTrace}");
+                            trans.Abort();
+                            throw;
+                        }
                     }
-                    catch (System.Exception innerEx)
-                    {
-                        ed.WriteMessage($"\n事务处理中发生错误: {innerEx.Message}");
-                        ed.WriteMessage($"\n内部异常堆栈跟踪: {innerEx.StackTrace}");
-                        trans.Abort();
-                        throw;
-                    }
+                }
+                else
+                {
+                    ed.WriteMessage("\n在源图层上没有找到多行文字对象。");
                 }
             }
             catch (System.Exception ex)
@@ -231,6 +299,51 @@ namespace TextTranslationPlugin
             {
                 Autodesk.AutoCAD.ApplicationServices.Application.DocumentManager.MdiActiveDocument.Editor
                     .WriteMessage($"\n处理 DBText 时发生错误: {ex.Message}");
+                return 0;
+            }
+        }
+
+        // Process a MText entity
+        private int ProcessMText(
+            Transaction trans,
+            MText mtext,
+            ObjectId targetLayerId,
+            BlockTableRecord btr,
+            string translatedText)
+        {
+            try
+            {
+                // 1. 获取 MText 的 Bounding Box
+                Extents3d extents = mtext.GeometricExtents; // 使用 GeometricExtents 属性
+                double mtextHeight = extents.MaxPoint.Y - extents.MinPoint.Y; // 计算高度，近似值
+
+                // 2. 创建 MText 的副本
+                MText newMText = mtext.Clone() as MText;
+
+                // 3. 使用 MText 的高度作为位移距离
+                double offsetInUnits = mtextHeight;
+
+                // 4. 向下移动副本
+                Vector3d moveVector = new Vector3d(0, -offsetInUnits, 0);
+                Matrix3d moveMatrix = Matrix3d.Displacement(moveVector);
+                newMText.TransformBy(moveMatrix);
+
+                // 5. 设置图层为目标图层
+                newMText.LayerId = targetLayerId;
+
+                // 6. 更新文本内容为翻译后的文本
+                newMText.Contents = translatedText; // 使用 Contents 属性
+
+                // 7. 将新的 MText 添加到数据库
+                btr.AppendEntity(newMText);
+                trans.AddNewlyCreatedDBObject(newMText, true);
+
+                return 1;
+            }
+            catch (System.Exception ex)
+            {
+                Autodesk.AutoCAD.ApplicationServices.Application.DocumentManager.MdiActiveDocument.Editor
+                    .WriteMessage($"\n处理 MText 时发生错误: {ex.Message}");
                 return 0;
             }
         }
