@@ -26,7 +26,7 @@
 1. 打开 AutoCAD 插件将自动加载
 
 ### 步骤 3 - 配置 API 参数
-1. 输入指令：`AITRANSLATE_SETTINGS`（或点击菜单栏`AI翻译` ➡️ `AI系统设置`）
+1. 输入指令：`AITRANSLATE_SETTINGS`（或点击菜单栏`AI翻译` ➡️ `系统设置`）
 2. 修改配置参数：
    - `API Key` ➡️ 替换为您的有效 API 密钥
    - `Base URL` ➡️ 自定义接口地址
