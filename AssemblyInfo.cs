@@ -6,8 +6,12 @@ using System.Runtime.InteropServices;
 // General Information about an assembly is controlled through the following
 // set of attributes. Change these attribute values to modify the information
 // associated with an assembly.
-[assembly: AssemblyTitle("Text Translation Plugin")]
-[assembly: AssemblyDescription("A plugin to copy and translate text in AutoCAD")]
+[assembly: AssemblyTitle("AI翻译插件   Text Translation Plugin")]
+[assembly: AssemblyDescription(
+    "这是一款基于AI语言模型的智能CAD文字翻译工具\n" +
+    "作者：姚京天     微信：azusa--nakano\n" +
+    "本程序已开源，开源地址：https://github.com/ravenk1n9/CADTextTranslationPlugin"
+)]
 [assembly: AssemblyConfiguration("")]
 [assembly: AssemblyCompany("")]
 [assembly: AssemblyProduct("TextTranslationPlugin")]
@@ -33,5 +37,5 @@ using System.Runtime.InteropServices;
 // You can specify all the values or you can default the Build and Revision Numbers
 // by using the '*' as shown below:
 // [assembly: AssemblyVersion("1.0.*")]
-[assembly: AssemblyVersion("2.0.0")]
-[assembly: AssemblyFileVersion("2.0.0")]
+[assembly: AssemblyVersion("2.1.0")]
+[assembly: AssemblyFileVersion("2.1.0")]

@@ -5,6 +5,8 @@
     <OutputType>Library</OutputType>
     <AppendTargetFrameworkToOutputPath>false</AppendTargetFrameworkToOutputPath>
     <GenerateAssemblyInfo>false</GenerateAssemblyInfo>
+    <!-- Add this to support WPF/WinForms designer -->
+    <UseWindowsForms>true</UseWindowsForms>
   </PropertyGroup>
 
   <PropertyGroup>
@@ -24,14 +26,45 @@
       <HintPath>C:\Program Files\Autodesk\AutoCAD 2021\accoremgd.dll</HintPath>
       <Private>False</Private>
     </Reference>
+    <Reference Include="AcCui">
+      <HintPath>C:\Program Files\Autodesk\AutoCAD 2021\AcCui.dll</HintPath>
+      <Private>False</Private>
+    </Reference>
     <Reference Include="System.Net.Http" />
     <Reference Include="PresentationCore" />
     <Reference Include="PresentationFramework" />
     <Reference Include="System.Windows.Forms" />
+    <!-- Add reference for XAML -->
+    <Reference Include="System.Xaml" />
   </ItemGroup>
 
   <ItemGroup>
     <PackageReference Include="Newtonsoft.Json" Version="13.0.1" />
+  </ItemGroup>
+
+  <!-- Add new files here -->
+  <ItemGroup>
+    <Compile Update="UI\AboutForm.cs">
+      <SubType>Form</SubType>
+    </Compile>
+    <Compile Update="UI\AboutForm.Designer.cs">
+      <DependentUpon>AboutForm.cs</DependentUpon>
+    </Compile>
+    <Compile Update="UI\SettingsForm.cs">
+      <SubType>Form</SubType>
+    </Compile>
+    <Compile Update="UI\SettingsForm.Designer.cs">
+      <DependentUpon>SettingsForm.cs</DependentUpon>
+    </Compile>
+  </ItemGroup>
+  
+  <ItemGroup>
+    <EmbeddedResource Update="UI\AboutForm.resx">
+      <DependentUpon>AboutForm.cs</DependentUpon>
+    </EmbeddedResource>
+    <EmbeddedResource Update="UI\SettingsForm.resx">
+      <DependentUpon>SettingsForm.cs</DependentUpon>
+    </EmbeddedResource>
   </ItemGroup>
 
   <ItemGroup>
@@ -39,4 +72,11 @@
       <CopyToOutputDirectory>Always</CopyToOutputDirectory>
     </None>
   </ItemGroup>
+
+    <ItemGroup>
+    <None Update="AITRANSLATION.cuix">
+      <CopyToOutputDirectory>Always</CopyToOutputDirectory>
+    </None>
+  </ItemGroup>
+
 </Project>
